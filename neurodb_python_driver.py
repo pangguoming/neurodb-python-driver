@@ -111,7 +111,7 @@ class NeuroDBDriver(object):
 		self.client = socket.socket()
 		self.client.connect((ip, port))
 	
-	def clase():
+	def close():
 		self.client.close()
 	
 	def executeQuery(self,query):
@@ -142,8 +142,9 @@ class NeuroDBDriver(object):
 			bodyLen = int(head[9])
 			body = self.client.recv(bodyLen)
 			readLine(self.client)
-			recordSet = self.deserializeReturnData(body)
-			resultSet.recordSet=recordSet
+			if resultSet.results>0:
+				recordSet = self.deserializeReturnData(body)
+				resultSet.recordSet=recordSet
 		else:
 			raise Exception("reply type erro")
 		return resultSet
@@ -251,7 +252,7 @@ class NeuroDBDriver(object):
 		for link in links:
 			if link.id == id:
 				return link
-		return null
+		return None
 
 
 	def deserializeReturnData( self,body):
@@ -276,7 +277,7 @@ class NeuroDBDriver(object):
 			raise Exception("Error Type")
 		cnt_links = self.deserializeUint(cur)
 		for i in range(0, cnt_links):
-			l = self.deserializeCLink(cur, rd.getTypes(), rd.keyNames)
+			l = self.deserializeCLink(cur, rd.types, rd.keyNames)
 			rd.links.append(l)
 		#/*读取return结果集列表*/
 		if self.deserializeType(cur) != NEURODB_RECORDS:
@@ -301,7 +302,7 @@ class NeuroDBDriver(object):
 					val.val=n
 				elif type == VO_LINK :
 					id = self.deserializeUint(cur)
-					l = self.getLinkById(rd.getLinks(), id)
+					l = self.getLinkById(rd.links, id)
 					val.val=l
 				elif type == VO_PATH:
 					len = self.deserializeUint(cur)
@@ -359,5 +360,5 @@ def readLine(client):
 
 
 driver = NeuroDBDriver("127.0.0.1",8839)
-result=driver.executeQuery("match (n) return n")
+result=driver.executeQuery("match (n)-[r]->(m) return n,r,m ")
 print("ok")
