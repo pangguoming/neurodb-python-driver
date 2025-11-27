@@ -111,7 +111,7 @@ class NeuroDBDriver(object):
 		self.client = socket.socket()
 		self.client.connect((ip, port))
 	
-	def close():
+	def close(self):
 		self.client.close()
 	
 	def executeQuery(self,query):
@@ -358,7 +358,7 @@ def readLine(client):
 		c = btsstr[0]
 	return sb.replace("\r\n","")
 
-
-driver = NeuroDBDriver("127.0.0.1",8839)
-result=driver.executeQuery("match (n)-[r]->(m) return n,r,m ")
-print("ok")
+if __name__ == '__main__':
+    driver = NeuroDBDriver("127.0.0.1",8839)
+    result=driver.executeQuery("match (n) return n")
+    print("ok")
