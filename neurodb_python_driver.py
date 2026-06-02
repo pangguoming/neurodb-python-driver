@@ -14,15 +14,18 @@ NDB_32BITLEN = 2
 NDB_ENCVAL = 3
 # NDB_LENERR =UINT_MAX
 
-VO_STRING = 1
-VO_NUM = 2
-VO_STRING_ARRY = 3
-VO_NUM_ARRY = 4
-VO_NODE = 5
-VO_LINK = 6
-VO_PATH = 7
-VO_VAR = 8
-VO_VAR_PATTERN = 9
+VO_STRING = 1;
+VO_INT = 2;
+VO_FLOAT = 3;
+VO_BOOL = 4;
+VO_STRING_ARRY = 5;
+VO_INT_ARRY = 6;
+VO_FLOAT_ARRY = 7;
+VO_NODE = 8;
+VO_LINK = 9;
+VO_PATH = 10;
+VO_VAR = 8;
+VO_VAR_PATTERN = 9;
 
 class ResultStatus (): #resultSet.status 的状态码对应错误描述
 	ERROR_INFO=0 #错误消息
@@ -104,7 +107,6 @@ class RecordSet(object):
 	records = [[]]
 
 class ResultSet(object):
-
 	status = 0
 	cursor = 0
 	results = 0
@@ -116,6 +118,8 @@ class ResultSet(object):
 	deleteLinks = 0
 	msg = None
 	recordSet = None
+	def __str__(self):
+		return f"ResultSet(modifyLinks='{self.msg}',results='{self.results}', addNodes={self.addNodes}, addLinks='{self.addLinks}, modifyNodes='{self.modifyNodes}, modifyLinks='{self.modifyLinks}, deleteNodes='{self.deleteNodes}, deleteLinks='{self.deleteLinks},recordSet='{self.__dict__},)"
 
 class StringCur(object):
 	
@@ -189,11 +193,12 @@ class NeuroDBDriver(object):
 		return int(cur.getType())
 	
 	def deserializeUint(self,cur):
-		buf = [0,0,0]
+		buf = [0,0,0,0]
 		buf[0] = int.from_bytes(cur.get(1).encode('utf-8') ,'little')
 		buf[1] = int.from_bytes(cur.get(1).encode('utf-8') ,'little')
 		buf[2] = int.from_bytes(cur.get(1).encode('utf-8') ,'little')
-		return (buf[0]&0x7f)<<14|(buf[1]&0x7f)<<7|buf[2]
+		buf[3] = int.from_bytes(cur.get(1).encode('utf-8') ,'little')
+		return (buf[0]&0xFF)<<24|(buf[1]&0xFF)<<16|(buf[2]&0xFF)<<8|buf[3]
 	
 	def deserializeString(self,cur):
 		len = self.deserializeUint(cur)
@@ -231,7 +236,7 @@ class NeuroDBDriver(object):
 			val.type=type
 			if type == VO_STRING:
 				val.val=self.deserializeString(cur)
-			elif type == VO_NUM:
+			elif type == VO_BOOL or type == VO_INT or type ==VO_FLOAT :
 				doubleStr = self.deserializeString(cur)
 				val.val=float(doubleStr)
 			elif type == VO_STRING_ARRY:
@@ -240,7 +245,7 @@ class NeuroDBDriver(object):
 				for i in range(0,aryLen):
 					valAry[i] = self.deserializeString(cur)
 				val.val=valAry
-			elif type == VO_NUM_ARRY:
+			elif type == VO_INT_ARRY or type==VO_FLOAT_ARRY:
 				aryLen = self.deserializeUint(cur)
 				valAry = []
 				for i in range(0,aryLen):
@@ -353,7 +358,7 @@ class NeuroDBDriver(object):
 					val.val=path
 				elif type == VO_STRING:
 					val.val=self.deserializeString(cur)
-				elif type == VO_NUM:
+				elif type == VO_BOOL or type == VO_INT or type ==VO_FLOAT :
 					doubleStr = self.deserializeString(cur)
 					val.val=float(doubleStr)
 				elif type == VO_STRING_ARRY:
@@ -362,7 +367,7 @@ class NeuroDBDriver(object):
 					for  i in range(0,aryLen):
 						valAry[i] = self.deserializeString(cur)
 					val.val=valAry
-				elif type == VO_NUM_ARRY:
+				elif type == VO_INT_ARRY or type==VO_FLOAT_ARRY:
 					aryLen = self.deserializeUint(cur)
 					valAry =[]
 					for  i in range(0,aryLen):
